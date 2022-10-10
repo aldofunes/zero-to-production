@@ -2,7 +2,7 @@ image: "rust:latest"
 
 default:
   before_script:
-    - rustc --version 
+    - rustc --version
     - cargo --version
 
 stages:
@@ -10,17 +10,23 @@ stages:
 
 test-code:
   stage: test
+  coverage: '/^\d+.\d+% coverage/'
+  artifacts:
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: cobertura.xml
   script:
     - cargo test
     - cargo install cargo-tarpaulin
-    - cargo tarpaulin --ignore-tests
+    - cargo tarpaulin --ignore-tests --out Xml
 
 lint-code:
   stage: test
   script:
     - rustup component add clippy
     - cargo clippy -- --deny warnings
-    
+
 format-code:
   stage: test
   script:
