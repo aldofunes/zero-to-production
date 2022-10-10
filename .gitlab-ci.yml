@@ -19,7 +19,7 @@ lint-code:
   stage: test
   script:
     - rustup component add clippy
-    - cargo clippy -- -D warnings
+    - cargo clippy -- --deny warnings
     
 format-code:
   stage: test
@@ -31,4 +31,4 @@ audit-code:
   stage: test
   script:
     - cargo install cargo-audit
-    - cargo audit
+    - cargo audit --deny warnings
