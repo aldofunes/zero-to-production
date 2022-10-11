@@ -4,13 +4,33 @@ default:
   before_script:
     - rustc --version
     - cargo --version
+  services:
+    - name: postgres:14-alpine
 
 stages:
+  - migrate
+  - schema-check
   - test
+
+migrate-db:
+  stage: migrate
+  script:
+    - sudo apt-get install libpq-dev -y
+    - SKIP_DOCKER=true ./scripts/init_db.sh
+
+check-schema:
+  stage: schema-check
+  script:
+    - cargo sqlx prepare --check -- --bin newsletter
 
 test-code:
   stage: test
   coverage: '/^\d+.\d+% coverage/'
+  variables:
+    POSTGRES_DB: postgres
+    POSTGRES_USER: postgres
+    POSTGRES_PASSWORD: password
+
   artifacts:
     reports:
       coverage_report:
@@ -23,6 +43,10 @@ test-code:
 
 lint-code:
   stage: test
+  variables:
+    POSTGRES_DB: postgres
+    POSTGRES_USER: postgres
+    POSTGRES_PASSWORD: password
   script:
     - rustup component add clippy
     - cargo clippy -- --deny warnings
