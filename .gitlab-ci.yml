@@ -15,18 +15,15 @@ stages:
 migrate-db:
   stage: migrate
   variables:
-    POSTGRES_DB: postgres
-    POSTGRES_USER: postgres
-    POSTGRES_PASSWORD: password
+    DATABASE_URL: postgres://postgres:password@postgres:5432/newsletter
   script:
+    - apt-get install libpq-dev -y
     - SKIP_DOCKER=true ./scripts/init_db.sh
 
 check-schema:
   stage: schema-check
   variables:
-    POSTGRES_DB: postgres
-    POSTGRES_USER: postgres
-    POSTGRES_PASSWORD: password
+    DATABASE_URL: postgres://postgres:password@postgres:5432/newsletter
   script:
     - cargo sqlx prepare --check -- --bin newsletter
 
@@ -34,10 +31,7 @@ test-code:
   stage: test
   coverage: '/^\d+.\d+% coverage/'
   variables:
-    POSTGRES_DB: postgres
-    POSTGRES_USER: postgres
-    POSTGRES_PASSWORD: password
-
+    DATABASE_URL: postgres://postgres:password@postgres:5432/newsletter
   artifacts:
     reports:
       coverage_report:
@@ -51,9 +45,7 @@ test-code:
 lint-code:
   stage: test
   variables:
-    POSTGRES_DB: postgres
-    POSTGRES_USER: postgres
-    POSTGRES_PASSWORD: password
+    DATABASE_URL: postgres://postgres:password@postgres:5432/newsletter
   script:
     - rustup component add clippy
     - cargo clippy -- --deny warnings
