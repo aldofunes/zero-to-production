@@ -14,12 +14,19 @@ stages:
 
 migrate-db:
   stage: migrate
+  variables:
+    POSTGRES_DB: postgres
+    POSTGRES_USER: postgres
+    POSTGRES_PASSWORD: password
   script:
-    - sudo apt-get install libpq-dev -y
     - SKIP_DOCKER=true ./scripts/init_db.sh
 
 check-schema:
   stage: schema-check
+  variables:
+    POSTGRES_DB: postgres
+    POSTGRES_USER: postgres
+    POSTGRES_PASSWORD: password
   script:
     - cargo sqlx prepare --check -- --bin newsletter
 
