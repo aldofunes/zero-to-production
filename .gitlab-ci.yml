@@ -21,7 +21,8 @@ migrate-db:
     POSTGRES_HOST_AUTH_METHOD: trust
     DATABASE_URL: postgres://postgres:password@postgres:5432/newsletter
   script:
-    - apt-get install libpq-dev -y
+    - apt-get update
+    - apt-get install postgresql-client -y
     - SKIP_DOCKER=true ./scripts/init_db.sh
 
 check-schema:
