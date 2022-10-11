@@ -1,4 +1,4 @@
-image: "rust:latest"
+image: "rust:1.64"
 
 default:
   before_script:
@@ -9,7 +9,6 @@ default:
 
 stages:
   - migrate
-  - schema-check
   - test
 
 migrate-db:
@@ -21,19 +20,10 @@ migrate-db:
     POSTGRES_HOST_AUTH_METHOD: trust
     DATABASE_URL: postgres://postgres:password@postgres:5432/newsletter
   script:
+    - cargo install sqlx-cli --no-default-features --features rustls,postgres
     - apt-get update
     - apt-get install postgresql-client -y
     - SKIP_DOCKER=true ./scripts/init_db.sh
-
-check-schema:
-  stage: schema-check
-  variables:
-    POSTGRES_DB: postgres
-    POSTGRES_USER: postgres
-    POSTGRES_PASSWORD: password
-    POSTGRES_HOST_AUTH_METHOD: trust
-    DATABASE_URL: postgres://postgres:password@postgres:5432/newsletter
-  script:
     - cargo sqlx prepare --check -- --bin newsletter
 
 test-code:
