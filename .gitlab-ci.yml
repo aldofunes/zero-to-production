@@ -5,9 +5,8 @@ default:
     - rustc --version
     - cargo --version
     - cargo install sqlx-cli --no-default-features --features rustls,postgres
-    - apt-get update
-    - apt-get install postgresql-client -y
-    - SKIP_DOCKER=true ./scripts/init_db.sh
+    - sqlx dabase create
+    - sqlx migrate run
   services:
     - name: postgres:14-alpine
 
@@ -58,12 +57,18 @@ lint-code:
 
 format-code:
   stage: test
+  before_script:
+    - rustc --version
+    - cargo --version
   script:
     - rustup component add rustfmt
     - cargo fmt -- --check
 
 audit-code:
   stage: test
+  before_script:
+    - rustc --version
+    - cargo --version
   script:
     - cargo install cargo-audit
     - cargo audit --deny warnings
