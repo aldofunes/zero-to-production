@@ -4,15 +4,18 @@ default:
   before_script:
     - rustc --version
     - cargo --version
+    - cargo install sqlx-cli --no-default-features --features rustls,postgres
+    - apt-get update
+    - apt-get install postgresql-client -y
+    - SKIP_DOCKER=true ./scripts/init_db.sh
   services:
     - name: postgres:14-alpine
 
 stages:
-  - migrate
   - test
 
-migrate-db:
-  stage: migrate
+check-migrations:
+  stage: test
   variables:
     POSTGRES_DB: postgres
     POSTGRES_USER: postgres
@@ -20,10 +23,6 @@ migrate-db:
     POSTGRES_HOST_AUTH_METHOD: trust
     DATABASE_URL: postgres://postgres:password@postgres:5432/newsletter
   script:
-    - cargo install sqlx-cli --no-default-features --features rustls,postgres
-    - apt-get update
-    - apt-get install postgresql-client -y
-    - SKIP_DOCKER=true ./scripts/init_db.sh
     - cargo sqlx prepare --check -- --bin newsletter
 
 test-code:
