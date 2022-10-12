@@ -1,0 +1,9 @@
+.cargo
+.env
+.git/
+.gitlab-ci.yml
+cobertura
+migrations/
+scripts/
+target/
+tests/

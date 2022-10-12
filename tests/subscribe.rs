@@ -4,7 +4,6 @@ use newsletter::{
     telemetry::{get_subscriber, init_subscriber},
 };
 use once_cell::sync::Lazy;
-use secrecy::ExposeSecret;
 use sqlx::{Connection, Executor, PgConnection, PgPool};
 use std::net::TcpListener;
 
@@ -40,10 +39,9 @@ async fn spawn_app() -> TestApp {
 
 pub async fn configure_database(settings: &DatabaseSettings) -> PgPool {
     // create database
-    let mut connection =
-        PgConnection::connect(&settings.connection_string_without_db().expose_secret())
-            .await
-            .expect("Failed to connect to Postgres");
+    let mut connection = PgConnection::connect_with(&settings.without_db())
+        .await
+        .expect("Failed to connect to Postgres");
 
     connection
         .execute(format!("create database \"{}\"", &settings.database_name).as_str())
@@ -51,7 +49,7 @@ pub async fn configure_database(settings: &DatabaseSettings) -> PgPool {
         .expect("Failed to create database");
 
     // migrate database
-    let db_pool = PgPool::connect(&settings.connection_string().expose_secret())
+    let db_pool = PgPool::connect_with(settings.with_db())
         .await
         .expect("Failed to connect to Postgres");
 
