@@ -20,6 +20,7 @@ async fn main() -> std::io::Result<()> {
         "{}:{}",
         configuration.application.host, configuration.application.port
     );
+    tracing::info!("Starting listener at {}", address);
     let listener = TcpListener::bind(address)?;
 
     run(listener, db_pool)?.await?;

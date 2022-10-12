@@ -45,7 +45,6 @@ test-code:
         coverage_format: cobertura
         path: cobertura.xml
   script:
-    - cargo test
     - cargo install cargo-tarpaulin
     - cargo tarpaulin --ignore-tests --out Xml
 
