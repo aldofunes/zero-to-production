@@ -1,13 +1,62 @@
 use crate::{
+    configuration::{DatabaseSettings, Settings},
     email_client::EmailClient,
     routes::{health_check, subscribe},
 };
 use actix_web::{dev::Server, web, App, HttpServer};
-use sqlx::PgPool;
-use std::net::TcpListener;
+use sqlx::{postgres::PgPoolOptions, PgPool};
+use std::{net::TcpListener, time::Duration};
 use tracing_actix_web::TracingLogger;
 
-pub fn run(
+pub struct Application {
+    port: u16,
+    server: Server,
+}
+
+impl Application {
+    pub async fn build(configuration: Settings) -> Result<Self, std::io::Error> {
+        let db_pool = get_db_pool(&configuration.database);
+
+        let sender_email = configuration
+            .email_client
+            .sender()
+            .expect("Invalid sender email address.");
+        let timeout = configuration.email_client.timeout();
+        let email_client = EmailClient::new(
+            configuration.email_client.base_url,
+            sender_email,
+            configuration.email_client.authorization_token,
+            timeout,
+        );
+
+        let address = format!(
+            "{}:{}",
+            configuration.application.host, configuration.application.port
+        );
+        tracing::info!("Starting listener at {}", address);
+        let listener = TcpListener::bind(address)?;
+        let port = listener.local_addr().unwrap().port();
+        let server = run(listener, db_pool, email_client)?;
+
+        Ok(Self { port, server })
+    }
+
+    pub fn port(&self) -> u16 {
+        self.port
+    }
+
+    pub async fn run_until_stopped(self) -> Result<(), std::io::Error> {
+        self.server.await
+    }
+}
+
+pub fn get_db_pool(configuration: &DatabaseSettings) -> sqlx::Pool<sqlx::Postgres> {
+    PgPoolOptions::new()
+        .acquire_timeout(Duration::from_secs(2))
+        .connect_lazy_with(configuration.with_db())
+}
+
+fn run(
     listener: TcpListener,
     db_pool: PgPool,
     email_client: EmailClient,
