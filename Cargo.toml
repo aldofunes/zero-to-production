@@ -15,6 +15,7 @@ path = "src/main.rs"
 
 [dependencies]
 actix-web = "4.2.1"
+anyhow = "1.0.66"
 chrono = { version = "0.4.22", features = ["clock"], default-features = false }
 config = { version = "0.13.2", default-features = false, features = ["yaml"] }
 rand = { version = "0.8.5", features = ["std_rng"] }
@@ -31,6 +32,7 @@ sqlx = { version = "0.6.2", features = [
   "migrate",
   "offline",
 ] }
+thiserror = "1.0.37"
 tokio = { version = "1.19.2", features = ["macros", "rt-multi-thread"] }
 tracing = "0.1.37"
 tracing-actix-web = "0.6.1"
