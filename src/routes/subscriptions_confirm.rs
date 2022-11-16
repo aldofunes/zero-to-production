@@ -21,9 +21,9 @@ pub async fn confirm(
     let subscriber_id = get_subscriber_id_from_token(&db_pool, &parameters.subscription_token)
         .await
         .context("Failed to get a subscriber id from a token")?
-        .ok_or(SubscriptionsConfirmError::NotFoundError(
-            "subscriber id not found".into(),
-        ))?;
+        .ok_or_else(|| {
+            SubscriptionsConfirmError::NotFoundError("subscriber id not found".into())
+        })?;
 
     confirm_subscriber(&db_pool, subscriber_id)
         .await
