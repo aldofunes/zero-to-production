@@ -1,12 +1,12 @@
+use once_cell::sync::Lazy;
+use reqwest::Url;
+use sqlx::{Connection, Executor, PgConnection, PgPool};
+use wiremock::MockServer;
 use zero2prod::{
     configuration::{get_configuration, DatabaseSettings},
     startup::{get_db_pool, Application},
     telemetry::{get_subscriber, init_subscriber},
 };
-use once_cell::sync::Lazy;
-use reqwest::Url;
-use sqlx::{Connection, Executor, PgConnection, PgPool};
-use wiremock::MockServer;
 
 static TRACING: Lazy<()> = Lazy::new(|| {
     let subscriber = get_subscriber("test".into(), "debug".into());
