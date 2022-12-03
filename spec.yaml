@@ -4,10 +4,10 @@ services:
   - name: zero2prod-server
     dockerfile_path: Dockerfile
     source_dir: .
-    gitlab:
+    github:
       branch: main
       deploy_on_push: true
-      repo: aldofunes/zero2prod-demo
+      repo: aldofunes/zero-to-production
     health_check:
       http_path: /health_check
     http_port: 8000
