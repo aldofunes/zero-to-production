@@ -1,4 +1,4 @@
-use newsletter::{
+use zero2prod::{
     configuration::{get_configuration, DatabaseSettings},
     startup::{get_db_pool, Application},
     telemetry::{get_subscriber, init_subscriber},

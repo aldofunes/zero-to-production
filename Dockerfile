@@ -11,7 +11,7 @@ COPY --from=planner /app/recipe.json recipe.json
 RUN cargo chef cook --release --recipe-path recipe.json
 COPY . .
 ENV SQLX_OFFLINE true
-RUN cargo build --release --bin newsletter
+RUN cargo build --release --bin zero2prod
 
 FROM debian:bullseye-slim as runtime
 WORKDIR /app
@@ -20,7 +20,7 @@ RUN apt-get update -y \
   && apt-get autoremove -y \
   && apt-get clean -y \
   && rm -rf /var/lib/apt/lists/*
-COPY --from=builder /app/target/release/newsletter newsletter
+COPY --from=builder /app/target/release/zero2prod zero2prod
 COPY configuration configuration
 ENV APP_ENVIRONMENT production
-ENTRYPOINT ["./newsletter"]
+ENTRYPOINT ["./zero2prod"]

@@ -1347,40 +1347,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "newsletter"
-version = "0.1.0"
-dependencies = [
- "actix-web",
- "anyhow",
- "chrono",
- "claim",
- "config",
- "fake",
- "linkify",
- "once_cell",
- "quickcheck",
- "quickcheck_macros",
- "rand 0.8.5",
- "reqwest",
- "secrecy",
- "serde",
- "serde-aux",
- "serde_json",
- "sqlx",
- "thiserror",
- "tokio",
- "tracing",
- "tracing-actix-web",
- "tracing-bunyan-formatter",
- "tracing-log",
- "tracing-subscriber",
- "unicode-segmentation",
- "uuid",
- "validator",
- "wiremock",
-]
-
-[[package]]
 name = "nom"
 version = "7.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2836,6 +2802,40 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "56c1936c4cc7a1c9ab21a1ebb602eb942ba868cbd44a99cb7cdc5892335e1c85"
 dependencies = [
  "linked-hash-map",
+]
+
+[[package]]
+name = "zero2prod"
+version = "0.1.0"
+dependencies = [
+ "actix-web",
+ "anyhow",
+ "chrono",
+ "claim",
+ "config",
+ "fake",
+ "linkify",
+ "once_cell",
+ "quickcheck",
+ "quickcheck_macros",
+ "rand 0.8.5",
+ "reqwest",
+ "secrecy",
+ "serde",
+ "serde-aux",
+ "serde_json",
+ "sqlx",
+ "thiserror",
+ "tokio",
+ "tracing",
+ "tracing-actix-web",
+ "tracing-bunyan-formatter",
+ "tracing-log",
+ "tracing-subscriber",
+ "unicode-segmentation",
+ "uuid",
+ "validator",
+ "wiremock",
 ]
 
 [[package]]

@@ -1,4 +1,4 @@
-use newsletter::{
+use zero2prod::{
     configuration::get_configuration,
     startup::Application,
     telemetry::{get_subscriber, init_subscriber},
@@ -6,7 +6,7 @@ use newsletter::{
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
-    let subscriber = get_subscriber("newsletter".into(), "info".into());
+    let subscriber = get_subscriber("zero2prod".into(), "info".into());
     init_subscriber(subscriber);
 
     let configuration = get_configuration().expect("Failed to read configuration.");

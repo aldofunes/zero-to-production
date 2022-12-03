@@ -5,7 +5,7 @@ database:
   port: 5432
   username: "postgres"
   password: "password"
-  database_name: "newsletter"
+  database_name: "zero2prod"
   require_ssl: false
 email_client:
   base_url: "localhost"
