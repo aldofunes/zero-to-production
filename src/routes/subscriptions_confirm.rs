@@ -1,12 +1,10 @@
-use std::fmt::Debug;
-
+use super::error_chain_fmt;
 use actix_web::{web, HttpResponse, ResponseError};
 use anyhow::Context;
 use reqwest::StatusCode;
 use sqlx::PgPool;
+use std::fmt::Debug;
 use uuid::Uuid;
-
-use super::error_chain_fmt;
 
 #[derive(serde::Deserialize)]
 pub struct Parameters {
