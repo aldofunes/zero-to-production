@@ -1,6 +1,6 @@
 application:
   port: 8000
-  hmac_secret: long-and-very-secret-random-key
+  hmac_secret: long-and-very-secret-random-key-used-to-sign-flash-messagesvery-long
 database:
   host: "localhost"
   port: 5432
@@ -13,3 +13,4 @@ email_client:
   sender_email: "test@gmail.com"
   authorization_token: "my-secret-token"
   timeout_milliseconds: 10000
+redis_uri: "redis://localhost:6379"

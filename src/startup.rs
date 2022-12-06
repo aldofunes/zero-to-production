@@ -4,8 +4,10 @@ use crate::{
     routes::{confirm, health_check, home, login, login_form, publish_newsletter, subscribe},
     tera::init_tera,
 };
-use actix_web::{dev::Server, web, App, HttpServer};
-use secrecy::Secret;
+use actix_session::{storage::RedisSessionStore, SessionMiddleware};
+use actix_web::{cookie::Key, dev::Server, web, App, HttpServer};
+use actix_web_flash_messages::{storage::CookieMessageStore, FlashMessagesFramework};
+use secrecy::{ExposeSecret, Secret};
 use sqlx::{postgres::PgPoolOptions, PgPool};
 use std::{net::TcpListener, time::Duration};
 use tera::Tera;
@@ -17,7 +19,7 @@ pub struct Application {
 }
 
 impl Application {
-    pub async fn build(configuration: Settings) -> Result<Self, std::io::Error> {
+    pub async fn build(configuration: Settings) -> Result<Self, anyhow::Error> {
         let tera = init_tera();
 
         let db_pool = get_db_pool(&configuration.database);
@@ -45,10 +47,12 @@ impl Application {
             listener,
             db_pool,
             email_client,
-            configuration.application.base_url,
             tera,
+            configuration.application.base_url,
             configuration.application.hmac_secret,
-        )?;
+            configuration.redis_uri,
+        )
+        .await?;
 
         Ok(Self { port, server })
     }
@@ -71,23 +75,32 @@ pub fn get_db_pool(configuration: &DatabaseSettings) -> sqlx::Pool<sqlx::Postgre
 pub struct ApplicationBaseUrl(pub String);
 pub struct HmacSecret(pub Secret<String>);
 
-fn run(
+async fn run(
     listener: TcpListener,
     db_pool: PgPool,
     email_client: EmailClient,
-    base_url: String,
     tera: Tera,
+    base_url: String,
     hmac_secret: Secret<String>,
-) -> Result<Server, std::io::Error> {
+    redis_uri: Secret<String>,
+) -> Result<Server, anyhow::Error> {
     // wrap the connection in a smart pointer
     let db_pool = web::Data::new(db_pool);
     let email_client = web::Data::new(email_client);
     let base_url = web::Data::new(ApplicationBaseUrl(base_url));
     let tera = web::Data::new(tera);
-    let hmac_secret = web::Data::new(HmacSecret(hmac_secret));
 
+    let secret_key = Key::from(hmac_secret.expose_secret().as_bytes());
+    let mesage_store = CookieMessageStore::builder(secret_key.clone()).build();
+    let message_framework = FlashMessagesFramework::builder(mesage_store).build();
+    let redis_store = RedisSessionStore::new(redis_uri.expose_secret()).await?;
     let server = HttpServer::new(move || {
         App::new()
+            .wrap(message_framework.clone())
+            .wrap(SessionMiddleware::new(
+                redis_store.clone(),
+                secret_key.clone(),
+            ))
             .wrap(TracingLogger::default())
             .route("/", web::get().to(home))
             .route("/login", web::get().to(login_form))
@@ -100,7 +113,6 @@ fn run(
             .app_data(email_client.clone())
             .app_data(base_url.clone())
             .app_data(tera.clone())
-            .app_data(hmac_secret.clone())
     })
     .listen(listener)?
     .run();
