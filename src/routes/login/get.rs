@@ -54,7 +54,9 @@ pub async fn login_form(
         .content_type(ContentType::html())
         .body(body);
 
-    response.add_removal_cookie(&Cookie::new("_flash", ""));
+    response
+        .add_removal_cookie(&Cookie::new("_flash", ""))
+        .context("failed to add removal cookie")?;
 
     Ok(response)
 }
