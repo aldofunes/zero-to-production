@@ -5,18 +5,11 @@ use sqlx::PgPool;
 use tera::Tera;
 use uuid::Uuid;
 
-use crate::session_state::TypedSession;
+use crate::{session_state::TypedSession, utils::e500};
 
 #[derive(serde::Serialize)]
 struct DashboardContext {
     username: String,
-}
-
-fn e500<T>(e: T) -> actix_web::Error
-where
-    T: std::fmt::Debug + std::fmt::Display + 'static,
-{
-    actix_web::error::ErrorInternalServerError(e)
 }
 
 #[tracing::instrument(name = "Get admin dashboard", skip(db_pool, session, tera))]
@@ -49,7 +42,7 @@ pub async fn admin_dashboard(
 }
 
 #[tracing::instrument(name = "Get username", skip(db_pool))]
-async fn get_username(user_id: Uuid, db_pool: &PgPool) -> Result<String, anyhow::Error> {
+pub async fn get_username(user_id: Uuid, db_pool: &PgPool) -> Result<String, anyhow::Error> {
     let row = sqlx::query!("SELECT username FROM users WHERE user_id = $1", user_id)
         .fetch_one(db_pool)
         .await

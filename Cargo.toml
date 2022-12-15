@@ -14,9 +14,11 @@ name = "zero2prod"
 path = "src/main.rs"
 
 [dependencies]
+actix-files = "0.6.2"
 actix-session = { version = "0.7.2", features = ["redis-rs-tls-session"] }
 actix-web = "4.2.1"
 actix-web-flash-messages = { version = "0.4.2", features = ["cookies"] }
+actix-web-lab = "0.18.8"
 anyhow = "1.0.66"
 argon2 = { version = "0.4.1", features = ["std"] }
 base64 = "0.13.1"

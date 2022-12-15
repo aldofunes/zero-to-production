@@ -6,5 +6,19 @@
   </head>
   <body>
     <p>Welcome {{ username }}!</p>
+    <p>Available actions:</p>
+    <ol>
+      <li>
+        <a href="/admin/password">Change password</a>
+      </li>
+      <li>
+        <a href="/admin/newsletters">Send a newsletter</a>
+      </li>
+      <li>
+        <form action="/admin/logout" method="post">
+          <input type="submit" value="Logout" />
+        </form>
+      </li>
+    </ol>
   </body>
 </html>

@@ -5,9 +5,11 @@
     <title>Login</title>
   </head>
   <body>
-    {% if error_message %}
+    {% if messages|length > 0 %}
       <p>
-        <i>{{ error_message }}</i>
+        <ul>
+          {% for message in messages %}<i>{{ message }}</i>{% endfor %}
+        </ul>
       </p>
     {% endif %}
     <form action="/login" method="post">

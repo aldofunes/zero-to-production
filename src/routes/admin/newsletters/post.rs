@@ -1,8 +1,8 @@
-use super::error_chain_fmt;
 use crate::{
     authentication::{validate_credentials, AuthError, Credentials},
     domain::SubscriberEmail,
     email_client::EmailClient,
+    routes::error_chain_fmt,
 };
 use actix_web::{
     http::header::{self, HeaderMap, HeaderValue},

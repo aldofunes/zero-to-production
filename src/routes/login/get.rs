@@ -1,7 +1,7 @@
 use std::fmt::Debug;
 
 use actix_web::{cookie::Cookie, http::header::ContentType, web, HttpResponse, ResponseError};
-use actix_web_flash_messages::{IncomingFlashMessages, Level};
+use actix_web_flash_messages::IncomingFlashMessages;
 use anyhow::Context;
 use tera::Tera;
 
@@ -9,7 +9,7 @@ use crate::routes::error_chain_fmt;
 
 #[derive(serde::Serialize)]
 pub struct LoginData {
-    error_message: Option<String>,
+    messages: Vec<String>,
 }
 
 #[derive(thiserror::Error)]
@@ -37,15 +37,12 @@ pub async fn login_form(
     tera: web::Data<Tera>,
 ) -> Result<HttpResponse, LoginError> {
     let body = {
-        let error_message = flash_messages.iter().find(|m| m.level() == Level::Error);
         let login_data = LoginData {
-            error_message: match error_message {
-                None => None,
-                Some(e) => Some(e.content().to_string()),
-            },
+            messages: flash_messages.iter().map(|m| m.content().into()).collect(),
         };
         let context =
             tera::Context::from_serialize(&login_data).context("Failed to serialize context")?;
+
         tera.render("login.html", &context)
             .context("Failed to render html body")?
     };
