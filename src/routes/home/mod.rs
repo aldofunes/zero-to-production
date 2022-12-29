@@ -29,7 +29,7 @@ impl ResponseError for HomeError {
 pub async fn home(tera: web::Data<Tera>) -> Result<HttpResponse, HomeError> {
     let context = tera::Context::new();
     let body = tera
-        .render("index.html", &context)
+        .render("index.j2", &context)
         .context("Failed to render html body")?;
 
     Ok(HttpResponse::Ok()

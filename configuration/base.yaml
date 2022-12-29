@@ -9,8 +9,8 @@ database:
   database_name: "zero2prod"
   require_ssl: false
 email_client:
-  base_url: "localhost"
-  sender_email: "test@gmail.com"
+  base_url: "https://api.postmarkapp.com"
+  sender_email: "aldo@aldofunes.com"
   authorization_token: "my-secret-token"
   timeout_milliseconds: 10000
 redis_uri: "redis://localhost:6379"

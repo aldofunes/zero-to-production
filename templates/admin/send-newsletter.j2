@@ -1,0 +1,39 @@
+{% extends "admin/base.j2" %}
+{% block title %}
+  Send a Newsletter
+{% endblock title %}
+{% block content %}
+  <h1>Send a Newsletter</h1>
+  {% if messages|length > 0 %}
+    <p>
+      <ul>
+        {% for message in messages %}<i>{{ message }}</i>{% endfor %}
+      </ul>
+    </p>
+  {% endif %}
+  <form action="/admin/newsletters" method="post">
+    <label>
+      Title
+      <input type="text" placeholder="My Newsletter" name="title"/>
+    </label>
+    <br />
+    <label>
+      HTML Content
+      <input type="textarea" placeholder="
+        <p>Some Content</p>
+        " name="content_html"/>
+      </label>
+      <br />
+      <label>
+        Confirm new password
+        <label>
+          HTML Content
+          <input type="textarea" placeholder="Some Content" name="content_text"/>
+        </label>
+        <br />
+        <button type="submit">Change password</button>
+      </form>
+      <p>
+        <a href="/admin/dashboard">&lt;- Back</a>
+      </p>
+    {% endblock content %}

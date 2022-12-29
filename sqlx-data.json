@@ -1,5 +1,25 @@
 {
   "db": "PostgreSQL",
+  "0b606d83801451c5b8c5fe5430c39b621d0a40b05db410aba5a757fd5cedfaf7": {
+    "describe": {
+      "columns": [
+        {
+          "name": "username",
+          "ordinal": 0,
+          "type_info": "Text"
+        }
+      ],
+      "nullable": [
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Uuid"
+        ]
+      }
+    },
+    "query": "SELECT username FROM users WHERE user_id = $1"
+  },
   "3db2f41eb04c91097c76127da061bfa7bd76a30e0e97a2a123230963072bda5d": {
     "describe": {
       "columns": [
@@ -19,6 +39,45 @@
       }
     },
     "query": "SELECT subscriber_id from subscription_tokens WHERE subscription_token = $1"
+  },
+  "71e0c5d19a0d0245b6ef6e2a2dcdf21dcb69147824e73b46eb5b7ea30445556f": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Text",
+          "Uuid"
+        ]
+      }
+    },
+    "query": "update users set password_hash = $1 where user_id = $2"
+  },
+  "8a06ca2e5d18489d7f757d3db254337fe1fa78445c142747914b46fbee4d8809": {
+    "describe": {
+      "columns": [
+        {
+          "name": "user_id",
+          "ordinal": 0,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "password_hash",
+          "ordinal": 1,
+          "type_info": "Text"
+        }
+      ],
+      "nullable": [
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Text"
+        ]
+      }
+    },
+    "query": "select user_id, password_hash from users where username = $1"
   },
   "92d1430cbd64c1424560b061cb2cb395369617b1e72bc6e86e7f1cd987748491": {
     "describe": {

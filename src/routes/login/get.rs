@@ -43,7 +43,7 @@ pub async fn login_form(
         let context =
             tera::Context::from_serialize(&login_data).context("Failed to serialize context")?;
 
-        tera.render("login.html", &context)
+        tera.render("login.j2", &context)
             .context("Failed to render html body")?
     };
 
