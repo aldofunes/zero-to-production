@@ -1,13 +1,16 @@
 use crate::{
-    authentication::UserId, domain::SubscriberEmail, email_client::EmailClient,
-    routes::error_chain_fmt,
+    authentication::UserId,
+    domain::SubscriberEmail,
+    email_client::EmailClient,
+    idempotency::{save_response, try_processing, IdempotencyKey, NextAction},
+    utils::{e400, e500, see_other},
 };
 use actix_web::{
-    http::header::{self, HeaderValue},
-    web, HttpResponse, ResponseError,
+    web::{self, ReqData},
+    HttpResponse,
 };
+use actix_web_flash_messages::FlashMessage;
 use anyhow::Context;
-use reqwest::StatusCode;
 use sqlx::PgPool;
 use std::fmt::Debug;
 
@@ -16,75 +19,61 @@ pub struct FormData {
     title: String,
     content_html: String,
     content_text: String,
+    idempotency_key: String,
 }
 
 struct ConfirmedSubscriber {
     email: SubscriberEmail,
 }
 
-#[derive(thiserror::Error)]
-pub enum PublishError {
-    #[error("Authentication failed")]
-    AuthError(#[source] anyhow::Error),
-    #[error(transparent)]
-    UnexpectedError(#[from] anyhow::Error),
-}
-
-impl Debug for PublishError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        error_chain_fmt(self, f)
-    }
-}
-
-impl ResponseError for PublishError {
-    fn error_response(&self) -> HttpResponse {
-        match self {
-            PublishError::AuthError(_) => {
-                let mut response = HttpResponse::new(StatusCode::UNAUTHORIZED);
-                let header_value = HeaderValue::from_str(r#"Basic realm="publish""#).unwrap();
-
-                response
-                    .headers_mut()
-                    .insert(header::WWW_AUTHENTICATE, header_value);
-
-                response
-            }
-            PublishError::UnexpectedError(_) => {
-                HttpResponse::new(StatusCode::INTERNAL_SERVER_ERROR)
-            }
-        }
-    }
-}
-
 #[tracing::instrument(
     name = "Publish a newsletter issue",
-    skip(body, db_pool, email_client, user_id),
+    skip(form, db_pool, email_client),
     fields(user_id=tracing::field::Empty)
 )]
 pub async fn publish_newsletter(
-    body: web::Form<FormData>,
+    form: web::Form<FormData>,
     db_pool: web::Data<PgPool>,
     email_client: web::Data<EmailClient>,
-    user_id: web::ReqData<UserId>,
-) -> Result<HttpResponse, PublishError> {
+    user_id: ReqData<UserId>,
+) -> Result<HttpResponse, actix_web::Error> {
     let user_id = user_id.into_inner();
-    tracing::Span::current().record("user_id", &tracing::field::display(user_id));
 
-    let subscribers = get_confirmed_subscribers(&db_pool).await?;
+    // We must destructure the form to avoid upsetting the borrow-checker
+    let FormData {
+        title,
+        content_text,
+        content_html,
+        idempotency_key,
+    } = form.0;
+
+    fn success_message() -> FlashMessage {
+        FlashMessage::info("The newsletter issue has been published!")
+    }
+
+    let idempotency_key: IdempotencyKey = idempotency_key.try_into().map_err(e400)?;
+    let transaction = match try_processing(&db_pool, &idempotency_key, *user_id)
+        .await
+        .map_err(e500)?
+    {
+        NextAction::StartProcessing(t) => t,
+        NextAction::ReturnSavedResponse(saved_response) => {
+            success_message().send();
+            return Ok(saved_response);
+        }
+    };
+
+    let subscribers = get_confirmed_subscribers(&db_pool).await.map_err(e500)?;
     for subscriber in subscribers {
         match subscriber {
             Ok(subscriber) => {
                 email_client
-                    .send_email(
-                        &subscriber.email,
-                        &body.title,
-                        &body.content_html,
-                        &body.content_text,
-                    )
+                    .send_email(&subscriber.email, &title, &content_html, &content_text)
                     .await
                     .with_context(|| {
                         format!("Failed to send newsletter issue to {}", subscriber.email)
-                    })?;
+                    })
+                    .map_err(e500)?;
             }
             Err(error) => {
                 tracing::warn!(
@@ -94,7 +83,13 @@ pub async fn publish_newsletter(
             }
         }
     }
-    Ok(HttpResponse::Ok().finish())
+
+    success_message().send();
+    let response = see_other("/admin/newsletters");
+    let response = save_response(transaction, &idempotency_key, *user_id, response)
+        .await
+        .map_err(e500)?;
+    Ok(response)
 }
 
 #[tracing::instrument(name = "Get confirmed subscribers", skip(db_pool))]

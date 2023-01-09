@@ -42,6 +42,7 @@ pub async fn reject_anonymous_users(
 
     match session.get_user_id().map_err(e500)? {
         Some(user_id) => {
+            tracing::Span::current().record("user_id", &tracing::field::display(user_id));
             req.extensions_mut().insert(UserId(user_id));
             next.call(req).await
         }

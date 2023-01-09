@@ -12,6 +12,7 @@
     </p>
   {% endif %}
   <form action="/admin/newsletters" method="post">
+    <input hidden type="text" name="idempotency_key" value="{{ idempotency_key }}" />
     <label>
       Title
       <input type="text" placeholder="My Newsletter" name="title"/>
