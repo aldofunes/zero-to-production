@@ -5,4 +5,3 @@ database:
 email_client:
   base_url: "https://api.postmarkapp.com"
   sender_email: "aldo@aldofunes.com"
-
