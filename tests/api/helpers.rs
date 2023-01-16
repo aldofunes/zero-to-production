@@ -7,9 +7,10 @@ use uuid::Uuid;
 use wiremock::MockServer;
 use zero2prod::{
     configuration::{get_configuration, DatabaseSettings},
+    email_client::EmailClient,
     startup::{get_db_pool, Application},
     telemetry::{get_subscriber, init_subscriber},
-    tera::init_tera,
+    tera::init_tera, issue_delivery_worker::{ExecutionOutcome, try_execute_task},
 };
 
 static TRACING: Lazy<()> = Lazy::new(|| {
@@ -32,6 +33,7 @@ pub struct TestApp {
     pub test_user: TestUser,
     pub api_client: reqwest::Client,
     pub tera: Tera,
+    pub email_client: EmailClient,
 }
 
 impl TestApp {
@@ -160,6 +162,18 @@ impl TestApp {
             .await
             .expect("Failed to execute request")
     }
+
+    pub async fn dispatch_all_pending_emails(&self) {
+        loop {
+            if let ExecutionOutcome::EmptyQueue =
+                try_execute_task(&self.db_pool, &self.email_client)
+                    .await
+                    .unwrap()
+            {
+                break;
+            }
+        }
+    }
 }
 
 pub struct TestUser {
@@ -253,6 +267,7 @@ pub async fn spawn_app() -> TestApp {
         test_user: TestUser::generate(),
         api_client,
         tera: tera.to_owned(),
+        email_client: configuration.email_client.client(),
     };
 
     test_app.test_user.store(&test_app.db_pool).await;

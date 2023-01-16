@@ -6,9 +6,3 @@ CREATE TABLE newsletter_issues (
   published_at TEXT NOT NULL,
   PRIMARY KEY(newsletter_issue_id)
 );
-
-INSERT INTO issue_delivery_queue (newsletter_issue_id, subscriber_email)
-SELECT $1,
-  email
-FROM subscriptions
-WHERE STATUS = 'confirmed'

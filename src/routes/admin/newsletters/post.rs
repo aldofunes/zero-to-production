@@ -1,6 +1,5 @@
 use crate::{
     authentication::UserId,
-    email_client::EmailClient,
     idempotency::{save_response, try_processing, IdempotencyKey, NextAction},
     utils::{e400, e500, see_other},
 };
@@ -29,7 +28,6 @@ pub struct FormData {
 pub async fn publish_newsletter(
     form: web::Form<FormData>,
     db_pool: web::Data<PgPool>,
-    email_client: web::Data<EmailClient>,
     user_id: ReqData<UserId>,
 ) -> Result<HttpResponse, actix_web::Error> {
     let user_id = user_id.into_inner();
