@@ -8,9 +8,10 @@ use wiremock::MockServer;
 use zero2prod::{
     configuration::{get_configuration, DatabaseSettings},
     email_client::EmailClient,
+    issue_delivery_worker::{try_execute_task, ExecutionOutcome},
     startup::{get_db_pool, Application},
     telemetry::{get_subscriber, init_subscriber},
-    tera::init_tera, issue_delivery_worker::{ExecutionOutcome, try_execute_task},
+    tera::init_tera,
 };
 
 static TRACING: Lazy<()> = Lazy::new(|| {
