@@ -1,29 +1,5 @@
 {
   "db": "PostgreSQL",
-  "06f83a51e9d2ca842dc0d6947ad39d9be966636700de58d404d8e1471a260c9a": {
-    "describe": {
-      "columns": [
-        {
-          "name": "newsletter_issue_id",
-          "ordinal": 0,
-          "type_info": "Uuid"
-        },
-        {
-          "name": "subscriber_email",
-          "ordinal": 1,
-          "type_info": "Text"
-        }
-      ],
-      "nullable": [
-        false,
-        false
-      ],
-      "parameters": {
-        "Left": []
-      }
-    },
-    "query": "\n        SELECT newsletter_issue_id, subscriber_email\n        FROM issue_delivery_queue\n        FOR UPDATE\n        SKIP LOCKED\n        LIMIT 1\n        "
-  },
   "0b606d83801451c5b8c5fe5430c39b621d0a40b05db410aba5a757fd5cedfaf7": {
     "describe": {
       "columns": [
@@ -108,6 +84,42 @@
       }
     },
     "query": "SELECT subscriber_id from subscription_tokens WHERE subscription_token = $1"
+  },
+  "6299a7bb7e729c06d5eeb6fbe66801f9d71a05d9be8d70c79acc46ec441e8cd5": {
+    "describe": {
+      "columns": [
+        {
+          "name": "newsletter_issue_id",
+          "ordinal": 0,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "subscriber_email",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "n_retries",
+          "ordinal": 2,
+          "type_info": "Int2"
+        },
+        {
+          "name": "execute_after",
+          "ordinal": 3,
+          "type_info": "Timestamptz"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": []
+      }
+    },
+    "query": "\n        SELECT newsletter_issue_id, subscriber_email, n_retries, execute_after\n        FROM issue_delivery_queue\n        WHERE execute_after < NOW()\n        FOR UPDATE\n        SKIP LOCKED\n        LIMIT 1\n        "
   },
   "71e0c5d19a0d0245b6ef6e2a2dcdf21dcb69147824e73b46eb5b7ea30445556f": {
     "describe": {
@@ -227,6 +239,21 @@
       }
     },
     "query": "\n        INSERT INTO newsletter_issues (\n            newsletter_issue_id,\n            title,\n            text_content,\n            html_content,\n            published_at\n        )\n        VALUES ($1, $2, $3, $4, NOW())\n        "
+  },
+  "c4b78b783bf330f682ddc0ad9c30b442394bd2f6f7b549731b0fea7933c8d376": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Uuid",
+          "Text",
+          "Int2",
+          "Timestamptz"
+        ]
+      }
+    },
+    "query": "\n                        UPDATE issue_delivery_queue\n                        SET\n                            n_retries = $3,\n                            execute_after = $4\n                        WHERE\n                            newsletter_issue_id = $1\n                            AND subscriber_email = $2\n                        "
   },
   "c6d3e62fe7352a5f6f7a66ac2ac2275a5978b6652580bc2e6fda88a5e422d205": {
     "describe": {
