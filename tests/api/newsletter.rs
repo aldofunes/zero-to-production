@@ -4,6 +4,7 @@ use fake::{
     Fake,
 };
 use std::time::Duration;
+use tokio::time::sleep;
 use wiremock::{
     matchers::{any, method, path},
     Mock, MockBuilder, ResponseTemplate,
@@ -253,7 +254,7 @@ async fn failed_requests_get_retried() {
 
     when_sending_an_email()
         .respond_with(ResponseTemplate::new(500))
-        .expect(1)
+        .expect(2)
         .mount(&app.email_server)
         .await;
 
@@ -276,7 +277,9 @@ async fn failed_requests_get_retried() {
     assert!(
         html_page.contains("The newsletter issue has been accepted - emails will go out shortly.")
     );
+
     app.dispatch_all_pending_emails().await;
+    sleep(Duration::from_millis(3_000)).await;
     app.dispatch_all_pending_emails().await;
     // Mock verifies on Drop that we have sent the newsletter email **once**
 }

@@ -1,5 +1,9 @@
 use argon2::{password_hash::SaltString, Algorithm, Argon2, Params, PasswordHasher, Version};
 use once_cell::sync::Lazy;
+use rand::{
+    rngs::{OsRng, StdRng},
+    Rng, SeedableRng,
+};
 use reqwest::Url;
 use sqlx::{Connection, Executor, PgConnection, PgPool};
 use tera::Tera;
@@ -165,9 +169,10 @@ impl TestApp {
     }
 
     pub async fn dispatch_all_pending_emails(&self) {
+        let mut rng = StdRng::from_seed(OsRng.gen());
         loop {
             if let ExecutionOutcome::EmptyQueue =
-                try_execute_task(&self.db_pool, &self.email_client)
+                try_execute_task(&self.db_pool, &self.email_client, &mut rng)
                     .await
                     .unwrap()
             {
