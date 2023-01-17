@@ -244,3 +244,39 @@ async fn concurrent_form_submission_is_handled_gracefully() {
     app.dispatch_all_pending_emails().await;
     // Mock verifies on Drop that we have sent the newsletter email **once**
 }
+
+#[tokio::test]
+async fn failed_requests_get_retried() {
+    // Arrange
+    let app = spawn_app().await;
+    create_confirmed_subscriber(&app).await;
+
+    when_sending_an_email()
+        .respond_with(ResponseTemplate::new(500))
+        .expect(1)
+        .mount(&app.email_server)
+        .await;
+
+    // Act
+    app.test_user.login(&app).await;
+
+    let newsletter_request_body = serde_json::json!({
+        "title": "Newsletter title",
+        "text_content": "Newsletter body as plain text",
+        "html_content": "<p>Newsletter body as HTML</p>",
+        "idempotency_key": uuid::Uuid::new_v4().to_string(),
+    });
+
+    let response = app.post_publish_newsletter(&newsletter_request_body).await;
+
+    // Assert
+    assert_eq!(response.status().as_u16(), 303);
+
+    let html_page = app.get_publish_newsletter_html().await;
+    assert!(
+        html_page.contains("The newsletter issue has been accepted - emails will go out shortly.")
+    );
+    app.dispatch_all_pending_emails().await;
+    app.dispatch_all_pending_emails().await;
+    // Mock verifies on Drop that we have sent the newsletter email **once**
+}

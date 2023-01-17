@@ -4,6 +4,7 @@ use crate::{
     configuration::Settings, domain::SubscriberEmail, email_client::EmailClient,
     startup::get_db_pool,
 };
+use chrono::Utc;
 use sqlx::{PgPool, Postgres, Transaction};
 use tracing::{field::display, Span};
 use uuid::Uuid;
@@ -37,16 +38,18 @@ pub async fn try_execute_task(
     if task.is_none() {
         return Ok(ExecutionOutcome::EmptyQueue);
     }
-    let (transaction, issue_id, email) = task.unwrap();
+    let (mut transaction, issue_id, email, n_retries, execute_after) = task.unwrap();
 
     Span::current()
         .record("newsletter_issue_id", &display(issue_id))
-        .record("subscriber_email", &display(&email));
+        .record("subscriber_email", &display(&email))
+        .record("n_retries", &display(n_retries))
+        .record("execute_after", &display(&execute_after));
 
     match SubscriberEmail::parse(email.clone()) {
         Ok(email) => {
             let issue = get_issue(pool, issue_id).await?;
-            if let Err(e) = email_client
+            match email_client
                 .send_email(
                     &email,
                     &issue.title,
@@ -55,11 +58,34 @@ pub async fn try_execute_task(
                 )
                 .await
             {
-                tracing::error!(
-                    error.cause_chain = ?e,
-                    error.message = %e,
-                    "Failed to deliver issue to a confirmed subscriber. Skipping.",
-                );
+                Ok(_) => delete_task(transaction, issue_id, &email.to_string()).await?,
+                Err(e) => {
+                    tracing::error!(
+                        error.cause_chain = ?e,
+                        error.message = %e,
+                        n_retries = %n_retries,
+                        execute_after = %execute_after,
+                        "Failed to deliver issue to a confirmed subscriber. Retrying.",
+                    );
+
+                    sqlx::query!(
+                        r#"
+                        UPDATE issue_delivery_queue
+                        SET n_retries = $3,
+                        execute_after = NOW() + (
+                            floor(random() * (10 * 2 ^ $3::int)) * (INTERVAL '1 second')
+                        )
+                        WHERE newsletter_issue_id = $1
+                        AND subscriber_email = $2
+                        "#,
+                        issue_id,
+                        email.to_string(),
+                        n_retries + 1,
+                    )
+                    .execute(&mut transaction)
+                    .await?;
+                    transaction.commit().await?;
+                }
             }
         }
         Err(e) => {
@@ -68,9 +94,9 @@ pub async fn try_execute_task(
                 error.message = %e,
                 "Skipping a confirmed subscriber. Their stored contact details are invalid",
             );
+            delete_task(transaction, issue_id, &email).await?;
         }
     }
-    delete_task(transaction, issue_id, &email).await?;
     Ok(ExecutionOutcome::TaskCompleted)
 }
 
@@ -78,12 +104,13 @@ type PgTransaction = Transaction<'static, Postgres>;
 #[tracing::instrument(skip_all)]
 async fn dequeue_task(
     pool: &PgPool,
-) -> Result<Option<(PgTransaction, Uuid, String)>, anyhow::Error> {
+) -> Result<Option<(PgTransaction, Uuid, String, i32, chrono::DateTime<Utc>)>, anyhow::Error> {
     let mut transaction = pool.begin().await?;
     let r = sqlx::query!(
         r#"
-        SELECT newsletter_issue_id, subscriber_email
+        SELECT newsletter_issue_id, subscriber_email, n_retries, execute_after
         FROM issue_delivery_queue
+        WHERE execute_after < NOW()
         FOR UPDATE
         SKIP LOCKED
         LIMIT 1
@@ -96,6 +123,8 @@ async fn dequeue_task(
             transaction,
             r.newsletter_issue_id,
             r.subscriber_email,
+            r.n_retries,
+            r.execute_after,
         )))
     } else {
         Ok(None)
