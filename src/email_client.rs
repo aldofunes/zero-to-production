@@ -78,7 +78,7 @@ mod tests {
 
     use crate::domain::SubscriberEmail;
     use crate::email_client::EmailClient;
-    use claim::{assert_err, assert_ok};
+    use claims::{assert_err, assert_ok};
     use fake::faker::internet::en::SafeEmail;
     use fake::faker::lorem::en::{Paragraph, Sentence};
     use fake::{Fake, Faker};
